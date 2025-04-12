@@ -28,6 +28,7 @@ COPY . .
 
 # Create directories and set permissions
 RUN mkdir -p /app/images && \
+    mkdir -p /app/docker/nginx/logs && \
     chown -R appuser:appgroup /app
 
 # Switch to non-root user

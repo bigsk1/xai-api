@@ -4,9 +4,19 @@
 .github
 
 # Docker
-docker/
 .docker
 .dockerignore
+
+# Specifically exclude sensitive files and directories within docker/
+docker/nginx/ssl/*.key
+docker/nginx/ssl/*.crt
+docker/nginx/ssl/*.pem
+docker/nginx/ssl/*.csr
+# Include the logs directory but not its contents
+docker/nginx/logs/*.log
+# Exclude htpasswd files
+docker/nginx/.htpasswd
+docker/nginx/.htpasswd.example
 
 # Python
 __pycache__/
