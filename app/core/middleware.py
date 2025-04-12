@@ -2,7 +2,7 @@ import time
 import logging
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.types import ASGIApp, Receive, Scope, Send
+from starlette.types import ASGIApp
 import uuid
 from app.core.config import settings
 

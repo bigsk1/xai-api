@@ -1,11 +1,7 @@
 import os
 import requests
-import json
 import base64
 import time
-from PIL import Image
-import io
-import asyncio
 from openai import OpenAI
 from colorama import init, Fore, Style
 

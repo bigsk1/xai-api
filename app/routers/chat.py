@@ -1,10 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.responses import StreamingResponse
-from typing import Optional, Dict, Any, List, AsyncGenerator
 import logging
 import time
 import json
-import asyncio
 import uuid
 
 from app.models.schemas import ChatCompletionRequest, ChatCompletionResponse, ErrorResponse

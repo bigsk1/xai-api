@@ -3,7 +3,6 @@ import sys
 import time
 import requests
 import base64
-import json
 
 # Add the parent directory to the path so we can import from app
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
