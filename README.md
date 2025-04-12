@@ -86,8 +86,8 @@ print(f"Image URL: {image_response.data[0].url}")
 
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
-   cd <repository-directory>
+   git clone https://github.com/bigsk1/xai-api
+   cd xai-api
    ```
 
 2. Create a virtual environment:
@@ -110,6 +110,9 @@ print(f"Image URL: {image_response.data[0].url}")
    DEFAULT_CHAT_MODEL=grok-3-mini-beta
    DEFAULT_IMAGE_GEN_MODEL=grok-2-image
    DEFAULT_VISION_MODEL=grok-2-vision-latest 
+   # Optional: Rate limiting
+   API_RATE_LIMIT=100
+   API_RATE_LIMIT_PERIOD=3600
    ```
 
 ### Running the API
@@ -211,9 +214,3 @@ The application is configurable through environment variables or a `.env` file:
 ## License
 
 [MIT](LICENSE)
-
-## Acknowledgements
-
-- [FastAPI](https://fastapi.tiangolo.com/)
-- [xAI](https://x.ai/)
-- [Pydantic](https://docs.pydantic.dev/) 
