@@ -211,6 +211,17 @@ The application is configurable through environment variables or a `.env` file:
   - No privilege escalation
   - Temporary filesystem for volatile data
 
+## Future Enhancements
+
+This API currently serves as a secure proxy to xAI's Grok API services. However, there are many opportunities to enhance its capabilities:
+
+- **Specialized Endpoints**: Create purpose-built endpoints for summarization, data extraction, and research
+- **External Integrations**: Connect to additional data sources, vector databases, and APIs
+- **Custom Logic**: Add pre-processing and post-processing capabilities to improve responses
+- **Enhanced Features**: Combine image generation with text generation, validate code outputs, etc.
+
+For a detailed roadmap and technical implementation ideas, see the [Future API Enhancements](docs/future-api.md) documentation.
+
 ## License
 
 [MIT](LICENSE)
