@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: xai-api
+    restart: unless-stopped
+    # No need to expose port 8000 to the host since Nginx will proxy
+    # ports:
+    #   - "8000:8000"
+    environment:
+      - XAI_API_KEY=${XAI_API_KEY}
+      - XAI_API_BASE=${XAI_API_BASE:-https://api.x.ai/v1}
+      - DEFAULT_CHAT_MODEL=${DEFAULT_CHAT_MODEL:-grok-3-mini-beta}
+      - DEFAULT_IMAGE_GEN_MODEL=${DEFAULT_IMAGE_GEN_MODEL:-grok-2-image}
+      - DEFAULT_VISION_MODEL=${DEFAULT_VISION_MODEL:-grok-2-vision-latest}
+      - API_RATE_LIMIT=${API_RATE_LIMIT:-100}
+      - API_RATE_LIMIT_PERIOD=${API_RATE_LIMIT_PERIOD:-3600}
+    volumes:
+      # Uncomment for development to hot reload changes
+      # - ../app:/app/app
+      - ../images:/app/images:rw  # For image storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:size=100M
+    networks:
+      - xai-network
+    # Coolify will add labels automatically
+    # labels:
+    #   - "traefik.enable=true"
+    #   - "traefik.http.routers.xai-api.rule=Host(`your-domain.com`)"
+    #   - "traefik.http.routers.xai-api.entrypoints=websecure"
+    #   - "traefik.http.routers.xai-api.tls=true"
+    #   - "traefik.http.services.xai-api.loadbalancer.server.port=8000"
+    #   - "traefik.http.middlewares.xai-auth.basicauth.users=admin:$$apr1$$xyz...hashedpassword"
+    #   - "traefik.http.routers.xai-api.middlewares=xai-auth"
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: xai-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./nginx/.htpasswd:/etc/nginx/.htpasswd:ro
+      - ./nginx/logs:/var/log/nginx
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - xai-network
+
+networks:
+  xai-network:
+    driver: bridge

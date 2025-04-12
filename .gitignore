@@ -1,0 +1,95 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+conda/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+.project
+.pydevproject
+.settings/
+.cursor/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Project specific
+.env
+*.log
+output*.jpg
+output*.jpeg
+
+# Images - but keep the directory
+images/*
+!images/.gitkeep
+
+# Docker specific
+.docker
+docker-compose.override.yml
+
+# SSL Certificates
+*.pem
+*.key
+*.crt
+*.csr
+docker/nginx/ssl/*.key
+docker/nginx/ssl/*.crt
+docker/nginx/ssl/*.csr
+docker/nginx/ssl/*.pem
+docker/nginx/.htpasswd
+
+# Nginx logs
+docker/nginx/logs/*
+!docker/nginx/logs/.gitkeep
+
+# Test results
+test_results/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+*.ipynb
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Local development
+.pytest_cache/
+
+# Project specific
+local_settings.py 
