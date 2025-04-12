@@ -54,6 +54,7 @@ images/*
 # Docker specific
 .docker
 docker-compose.override.yml
+docker/production.docker-compose.yaml
 
 # SSL Certificates
 *.pem

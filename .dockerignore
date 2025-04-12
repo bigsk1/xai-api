@@ -20,6 +20,7 @@ docker/nginx/logs/*.log
 # Exclude htpasswd files
 docker/nginx/.htpasswd
 docker/nginx/.htpasswd.example
+docker/production.docker-compose.yaml
 
 # Python
 __pycache__/
