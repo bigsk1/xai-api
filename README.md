@@ -2,6 +2,8 @@
 
 A modular FastAPI application to interact with xAI Grok API for image generation, image understanding, and chat functionalities.
 
+![Image](https://github.com/user-attachments/assets/102af561-f379-4b3f-a8e5-dc7c592dd9d7)
+
 ## Features
 
 - **Image Generation**: Generate images using xAI Grok models based on text prompts
