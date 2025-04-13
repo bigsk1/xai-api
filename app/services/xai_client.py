@@ -1,6 +1,7 @@
 import time
 import logging
-from typing import Dict, Any, Optional
+import json
+from typing import Dict, Any, Optional, AsyncGenerator, Union
 import httpx
 from app.core.config import settings
 
@@ -54,6 +55,69 @@ class XAIClient:
         except Exception as e:
             logger.error(f"Unexpected error: {str(e)}")
             raise Exception(f"Unexpected error: {str(e)}")
+
+    async def _make_streaming_request(self, endpoint: str, data: Dict[str, Any]) -> AsyncGenerator[Dict[str, Any], None]:
+        """Make a streaming request to the xAI API using SSE."""
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Accept": "text/event-stream",
+            "Content-Type": "application/json",
+        }
+        
+        url = f"{self.api_base}/{endpoint.lstrip('/')}"
+        
+        try:
+            async with httpx.AsyncClient(timeout=300.0) as client:
+                async with client.stream("POST", url, headers=headers, json=data) as response:
+                    response.raise_for_status()
+                    
+                    # Process the SSE stream
+                    buffer = ""
+                    async for chunk in response.aiter_text():
+                        buffer += chunk
+                        
+                        # Process complete SSE messages (may contain multiple events)
+                        while "\n\n" in buffer:
+                            message, buffer = buffer.split("\n\n", 1)
+                            
+                            # Skip empty messages and heartbeats
+                            if not message.strip() or message.strip() == "data: [DONE]":
+                                continue
+                                
+                            # Parse the SSE format (data: {...})
+                            if message.startswith("data: "):
+                                try:
+                                    json_data = json.loads(message[6:])  # Skip 'data: ' prefix
+                                    yield json_data
+                                except json.JSONDecodeError as e:
+                                    logger.error(f"Failed to parse SSE message: {e}")
+                                    continue
+                                    
+                    # Process any remaining data in the buffer
+                    if buffer.strip() and buffer.strip() != "data: [DONE]" and buffer.startswith("data: "):
+                        try:
+                            json_data = json.loads(buffer[6:])  # Skip 'data: ' prefix
+                            yield json_data
+                        except json.JSONDecodeError:
+                            pass
+                            
+        except httpx.HTTPStatusError as e:
+            logger.error(f"HTTP error during streaming: {e.response.status_code} - {e.response.text}")
+            try:
+                error_data = e.response.json()
+                error_msg = error_data.get('error', {}).get('message', str(e))
+            except Exception:
+                error_msg = str(e)
+            # Yield an error object
+            yield {"error": True, "message": f"API error: {error_msg}"}
+                
+        except httpx.RequestError as e:
+            logger.error(f"Request error during streaming: {str(e)}")
+            yield {"error": True, "message": f"Request error: {str(e)}"}
+            
+        except Exception as e:
+            logger.error(f"Unexpected error during streaming: {str(e)}")
+            yield {"error": True, "message": f"Unexpected error: {str(e)}"}
 
     async def generate_image(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
         """Generate an image using the xAI image generation API."""
@@ -138,6 +202,15 @@ class XAIClient:
             # Return the original response
             return chat_response
 
-    async def chat_completion(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Get chat completion using the xAI chat API."""
-        return await self._make_request("post", "/chat/completions", data=request_data) 
+    async def chat_completion(self, request_data: Dict[str, Any]) -> Union[Dict[str, Any], AsyncGenerator[Dict[str, Any], None]]:
+        """Get chat completion using the xAI chat API.
+        
+        If stream=True is in the request_data, returns an async generator that yields chunks of the response.
+        Otherwise, returns the complete response as a dictionary.
+        """
+        # Check if streaming is requested
+        if request_data.get("stream", False):
+            return self._make_streaming_request("/chat/completions", request_data)
+        else:
+            # Use the existing non-streaming method
+            return await self._make_request("post", "/chat/completions", data=request_data) 

@@ -149,6 +149,67 @@ def test_chat_completion_direct():
     except Exception as e:
         print_error(f"Error: {str(e)}")
 
+    # Chat streaming test
+    print_subsection("Chat Streaming")
+    try:
+        data = {
+            "model": "grok-3-mini-beta",
+            "messages": [
+                {"role": "user", "content": "Count from 1 to 5."}
+            ],
+            "temperature": 0.3,
+            "stream": True
+        }
+        
+        # For streaming, we need to set stream=True in the request
+        response = requests.post(
+            f"{API_BASE_URL}/api/v1/chat/completions",
+            headers=headers,
+            json=data,
+            stream=True
+        )
+        
+        if response.status_code == 200:
+            print_info("Receiving streaming response...")
+            content_buffer = ""
+            chunk_count = 0
+            max_chunks_to_display = 5  # Only show first few chunks
+            
+            for line in response.iter_lines():
+                if line:
+                    line = line.decode('utf-8')
+                    
+                    # Skip empty lines or non-data lines
+                    if not line.startswith('data: '):
+                        continue
+                        
+                    # Handle the [DONE] message
+                    if line.strip() == 'data: [DONE]':
+                        break
+                        
+                    # Parse the JSON data
+                    import json
+                    json_str = line[6:]  # Remove 'data: ' prefix
+                    
+                    try:
+                        chunk = json.loads(json_str)
+                        delta_content = chunk['choices'][0]['delta'].get('content', '')
+                        content_buffer += delta_content
+                        
+                        chunk_count += 1
+                        if chunk_count <= max_chunks_to_display and delta_content:
+                            print_info(f"Chunk {chunk_count}: '{delta_content}'")
+                    except json.JSONDecodeError:
+                        print_error(f"Error parsing chunk: {line}")
+            
+            print_success(f"Received {chunk_count} chunks total")
+            print_success(f"Final content: {content_buffer}")
+        else:
+            print_error(f"Error: {response.status_code} - {response.text}")
+            
+    except Exception as e:
+        print_error(f"Error: {str(e)}")
+
 def test_chat_completion_sdk():
     """Test chat completion using OpenAI SDK"""
     print_section("Chat Completion (OpenAI SDK)")
@@ -185,6 +246,38 @@ def test_chat_completion_sdk():
         )
         
         print_success(f"Response: {response.choices[0].message.content}")
+            
+    except Exception as e:
+        print_error(f"Error: {str(e)}")
+
+    # Test streaming chat
+    print_subsection("Chat Streaming")
+    try:
+        print_info("Streaming response:")
+        full_response = ""
+        chunk_count = 0
+        max_chunks_to_display = 5  # Only show first few chunks
+        
+        stream = openai_client.chat.completions.create(
+            model="grok-3-mini-beta",
+            messages=[
+                {"role": "user", "content": "List the days of the week."}
+            ],
+            stream=True,
+            temperature=0.3
+        )
+        
+        for i, chunk in enumerate(stream):
+            if chunk.choices[0].delta.content is not None:
+                content = chunk.choices[0].delta.content
+                full_response += content
+                
+                chunk_count += 1
+                if i < max_chunks_to_display and content:
+                    print_info(f"Chunk {i+1}: '{content}'")
+        
+        print_success(f"Received {chunk_count} chunks total")
+        print_success(f"Final response: {full_response}")
             
     except Exception as e:
         print_error(f"Error: {str(e)}")
@@ -278,6 +371,55 @@ def test_vision_analysis_direct():
         if response.status_code == 200:
             result = response.json()
             print_success(f"Response: {result['content']}")
+        else:
+            print_error(f"Error: {response.status_code} - {response.text}")
+            
+    except Exception as e:
+        print_error(f"Error: {str(e)}")
+
+    # Test streaming fallback with vision
+    print_subsection("Vision Streaming Fallback")
+    try:
+        data = {
+            "model": "grok-2-vision-latest",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": "https://api.time.com/wp-content/uploads/2017/11/dogs-cats-brain-study.jpg",
+                                "detail": "high",
+                            },
+                        },
+                        {
+                            "type": "text",
+                            "text": "What is in this image?",
+                        },
+                    ],
+                }
+            ],
+            "stream": True  # This should trigger fallback since vision streaming is not supported
+        }
+        
+        # Send request with stream=true but with a vision request
+        response = requests.post(
+            f"{API_BASE_URL}/api/v1/chat/completions",
+            headers=headers,
+            json=data
+        )
+        
+        if response.status_code == 200:
+            # Check for the fallback header
+            if 'X-Stream-Fallback' in response.headers:
+                print_success(f"Fallback header detected: {response.headers['X-Stream-Fallback']}")
+            else:
+                print_error("No fallback header found. Vision streaming fallback mechanism may not be working.")
+                
+            # Verify we got a complete (non-streamed) response
+            result = response.json()
+            print_success(f"Response received as non-streamed: {result['choices'][0]['message']['content'][:100]}...")
         else:
             print_error(f"Error: {response.status_code} - {response.text}")
             

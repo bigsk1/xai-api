@@ -9,6 +9,7 @@ A modular FastAPI application to interact with xAI Grok API for image generation
 - **Image Generation**: Generate images using xAI Grok models based on text prompts
 - **Image Vision/Understanding**: Analyze and understand image content
 - **Chat Completions**: Generate text responses using xAI Grok chat models
+- **Streaming Support**: Stream chat responses in real-time as they are generated
 - **Docker Ready**: Production-ready Docker setup with Nginx reverse proxy
 - **Security Hardened**: SSL/TLS, security headers, and non-root user setup
 - Modular architecture for easy extension
@@ -41,6 +42,19 @@ chat_response = client.chat.completions.create(
     temperature=0.7
 )
 print(chat_response.choices[0].message.content)
+
+# Streaming chat completion
+stream = client.chat.completions.create(
+    model="grok-3-mini-beta",
+    messages=[
+        {"role": "user", "content": "Write a short story about space travel"}
+    ],
+    stream=True,
+    temperature=0.7
+)
+for chunk in stream:
+    if chunk.choices[0].delta.content is not None:
+        print(chunk.choices[0].delta.content, end="", flush=True)
 
 # Vision analysis
 vision_response = client.chat.completions.create(
@@ -165,6 +179,7 @@ Once the server is running, you can access the auto-generated API documentation:
 For detailed examples of how to use the API, check the documentation in the `docs` folder:
 
 - [API Usage Examples](docs/examples.md) - Examples of using each endpoint with curl
+- [Streaming API](docs/streaming.md) - Guide to using streaming responses for real-time output
 - [Ready-to-Use Curl Commands](docs/curl_commands.md) - Copy-pastable curl commands for testing
 - [API Integration Guide](docs/api_integration.md) - Code examples for integrating with different programming languages
 

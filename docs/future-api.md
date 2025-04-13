@@ -196,6 +196,7 @@ curl -X POST https://your-api.com/api/v2/creative/image-story \
 - Implement caching layer for repeated requests
 - Add request/response logging and analytics
 - Develop model routing and fallback logic
+- ~~Add streaming support for chat completions~~ ✅
 
 ### Phase 2: Enhanced Endpoints
 - Research assistant endpoint with external data sources
@@ -217,7 +218,7 @@ curl -X POST https://your-api.com/api/v2/creative/image-story \
 ### Performance Optimization
 - Implement response caching for common queries
 - Use asyncio for concurrent external API calls
-- Stream large responses to reduce latency
+- ~~Stream large responses to reduce latency~~ ✅
 
 ### Scalability
 - Containerize specialized endpoints separately
@@ -228,6 +229,28 @@ curl -X POST https://your-api.com/api/v2/creative/image-story \
 - Implement endpoint-specific rate limiting
 - Add data validation and sanitization
 - Create granular API permissions
+
+## OpenAPI Documentation Maintenance
+
+To keep the OpenAPI documentation up-to-date as new features are added:
+
+1. **Define Schema Models First**: Always define new request/response models in `app/models/schemas.py` before implementing endpoints.
+
+2. **Update OpenAPI Generator Script**: After adding new endpoints or modifying existing ones, update the `scripts/generate_openapi.py` script to ensure the OpenAPI specification correctly reflects:
+   - Request parameters and body schemas
+   - Response formats, including streaming responses
+   - Accurate descriptions and examples
+
+3. **Regenerate OpenAPI Schema**: Run the generator script after making changes:
+   ```bash
+   python scripts/generate_openapi.py
+   ```
+
+4. **Verify Documentation**: Check the ReDoc UI to confirm the documentation is correct and complete.
+
+5. **Update API Examples**: Remember to also update the `docs/curl_commands.md` file with examples of using any new features.
+
+Following this workflow ensures the API documentation stays synchronized with the actual implementation, making it easier for users to understand and use the API correctly.
 
 ## Conclusion
 

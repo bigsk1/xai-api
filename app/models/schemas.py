@@ -79,10 +79,6 @@ class ChatCompletionRequest(BaseModel):
     stream: Optional[bool] = Field(False, description="Whether to stream the response")
     user: Optional[str] = Field(None, description="A unique identifier for the end-user")
 
-class ChatCompletionResponseMessage(BaseModel):
-    role: str
-    content: str
-
 class ChatCompletionResponse(BaseModel):
     id: Optional[str] = None
     object: Optional[str] = None
@@ -90,6 +86,29 @@ class ChatCompletionResponse(BaseModel):
     model: Optional[str] = None
     choices: List[Dict[str, Any]]
     usage: Optional[Union[Dict[str, Any], UsageMetrics]] = None
+
+# Adding detailed models for chat completion response
+class ChatCompletionResponseMessage(BaseModel):
+    role: str = Field(..., description="The role of the message author (e.g., 'assistant')")
+    content: str = Field(..., description="The content of the message")
+
+class ChatCompletionResponseChoice(BaseModel):
+    index: int = Field(..., description="The index of the choice")
+    message: ChatCompletionResponseMessage = Field(..., description="The message content")
+    finish_reason: Optional[str] = Field(None, description="The reason the model stopped generating (e.g., 'stop', 'length')")
+
+class ChatCompletionResponseChunk(BaseModel):
+    id: Optional[str] = None
+    object: Optional[str] = Field("chat.completion.chunk", description="Object type, always 'chat.completion.chunk' for streaming")
+    created: Optional[int] = None
+    model: Optional[str] = None
+    choices: List[Dict[str, Any]] = Field(..., description="List of message delta chunks")
+    usage: Optional[Union[Dict[str, Any], UsageMetrics]] = None
+
+class ChatCompletionStreamChoice(BaseModel):
+    index: int = Field(..., description="The index of the choice")
+    delta: Dict[str, Any] = Field(..., description="The content delta for this chunk")
+    finish_reason: Optional[str] = Field(None, description="The reason the model stopped generating, if applicable")
 
 # Error Response
 class ErrorResponse(BaseModel):

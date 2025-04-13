@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 import logging
 import time
 import json
 import uuid
+from typing import AsyncGenerator, Optional
 
-from app.models.schemas import ChatCompletionRequest, ChatCompletionResponse, ErrorResponse
+from app.models.schemas import ChatCompletionResponse, ErrorResponse, ChatCompletionRequest
 from app.services.xai_client import XAIClient
 from app.core.config import settings
 
@@ -23,18 +24,75 @@ async def get_xai_client() -> XAIClient:
             detail=f"Failed to initialize xAI client: {str(e)}"
         )
 
+async def process_stream_response(stream_generator, model_used: str) -> AsyncGenerator[str, None]:
+    """Process streaming response from xAI API and format it as SSE."""
+    try:
+        async for chunk in stream_generator:
+            # Check if the chunk indicates an error
+            if chunk.get("error", False):
+                error_message = json.dumps({"error": chunk.get("message", "Unknown error")})
+                yield f"data: {error_message}\n\n"
+                return
+                
+            # Format the chunk as SSE
+            # Add any missing fields required by our schema
+            if "created" not in chunk:
+                chunk["created"] = int(time.time())
+            
+            if "model" not in chunk:
+                chunk["model"] = model_used
+                
+            if "id" not in chunk:
+                chunk["id"] = f"chatcmpl-{str(uuid.uuid4())[:8]}"
+                
+            if "object" not in chunk:
+                chunk["object"] = "chat.completion.chunk"
+            
+            # Clean up the choices to match OpenAI format
+            if "choices" in chunk:
+                for choice in chunk["choices"]:
+                    # Check if there's a delta with reasoning_content
+                    if "delta" in choice and "reasoning_content" in choice["delta"]:
+                        # Filter out reasoning_content from client response
+                        # This is internal processing data and shouldn't be sent to clients
+                        if "content" not in choice["delta"]:
+                            # If there's no content but there is reasoning, add an empty content
+                            # this prevents client-side errors with libraries expecting content
+                            choice["delta"]["content"] = ""
+                        choice["delta"].pop("reasoning_content", None)
+                        
+                    # Handle empty delta cases
+                    if "delta" in choice and not choice["delta"]:
+                        choice["delta"] = {"content": ""}
+            
+            # Format the JSON and yield as SSE data
+            chunk_str = json.dumps(chunk)
+            yield f"data: {chunk_str}\n\n"
+            
+        # Send a final [DONE] event to signal the end of the stream
+        yield "data: [DONE]\n\n"
+    except Exception as e:
+        logger.error(f"Error processing stream: {str(e)}")
+        error_message = json.dumps({"error": str(e)})
+        yield f"data: {error_message}\n\n"
+
 @router.post(
     "/chat/completions",
     response_model=ChatCompletionResponse,
     responses={
         status.HTTP_400_BAD_REQUEST: {"model": ErrorResponse},
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {"model": ErrorResponse}
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {"model": ErrorResponse},
+        status.HTTP_200_OK: {
+            "content": {"text/event-stream": {}},
+            "description": "Streaming response (when stream=true)"
+        }
     },
     summary="Generate chat completions using xAI API",
-    description="Generate chat completions based on provided conversation messages using xAI's language models"
+    description="Generate chat completions based on provided conversation messages using xAI's language models. Set stream=true to receive a streaming response."
 )
 async def chat_completion(
-    request: Request,  # Use raw request to handle both standard and vision formats
+    request: Request,  # Keep raw request for flexibility
+    chat_request: Optional[ChatCompletionRequest] = None,  # Add for OpenAPI documentation
     xai_client: XAIClient = Depends(get_xai_client)
 ) -> ChatCompletionResponse:
     try:
@@ -47,6 +105,9 @@ async def chat_completion(
             
         model_used = request_data.get("model", settings.DEFAULT_CHAT_MODEL)
         
+        # Check if streaming is requested
+        is_streaming = request_data.get("stream", False)
+        
         # Check if this is a vision request (OpenAI SDK format)
         is_vision_request = False
         if "messages" in request_data and len(request_data["messages"]) > 0:
@@ -55,6 +116,25 @@ async def chat_completion(
                     is_vision_request = True
                     logger.info("Detected vision request in OpenAI SDK format")
                     break
+        
+        # Handle streaming for non-vision requests
+        if is_streaming and not is_vision_request:
+            logger.info(f"Processing streaming chat completion with model {model_used}")
+            stream_generator = await xai_client.chat_completion(request_data)
+            return StreamingResponse(
+                process_stream_response(stream_generator, model_used),
+                media_type="text/event-stream"
+            )
+                
+        # For streaming vision requests, we don't support it yet - fall back to non-streaming
+        if is_streaming and is_vision_request:
+            logger.warning("Streaming for vision requests is not supported by this API implementation. Converting to non-streaming request.")
+            # Set stream to false in the request
+            request_data["stream"] = False
+            # Add a header to indicate fallback occurred
+            headers = {"X-Stream-Fallback": "Vision requests don't support streaming - converted to non-streaming"}
+        else:
+            headers = {}
         
         # Make the API request
         start_time = time.time()
@@ -120,6 +200,11 @@ async def chat_completion(
             
             duration = time.time() - start_time
             logger.info(f"Vision request processed in {duration:.2f} seconds")
+            
+            # After processing the request, check if this was a fallback case and add headers to response
+            if is_streaming and is_vision_request:
+                # Create the response with the headers
+                return JSONResponse(content=chat_response, headers=headers)
             
             return chat_response
         else:

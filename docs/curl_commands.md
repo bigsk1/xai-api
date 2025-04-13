@@ -132,6 +132,48 @@ curl -X POST http://localhost:8000/api/v1/chat/completions \
   }'
 ```
 
+### Streaming Response
+
+```bash
+curl -X POST http://localhost:8000/api/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{
+    "model": "grok-3-mini-beta",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Write a short poem about technology."
+      }
+    ],
+    "stream": true
+  }'
+```
+
+This will return a streaming response using Server-Sent Events (SSE) format. Each chunk will start with `data: ` followed by a JSON object, and the stream will end with `data: [DONE]`.
+
+### Processing Streaming Responses with Command Line Tools
+
+You can use common command line tools to process streaming responses:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{
+    "model": "grok-3-mini-beta",
+    "messages": [
+      {
+        "role": "user",
+        "content": "What is the capital of France?"
+      }
+    ],
+    "stream": true
+  }' | grep -o '"content":"[^"]*"' | sed 's/"content":"//g' | sed 's/"//g' | tr -d '\n'
+```
+
+This pipeline extracts and concatenates just the content field from each chunk.
+
 ### OpenAI SDK Vision Format
 
 For compatibility with the OpenAI SDK's vision handling, you can send vision requests through the chat completions endpoint:
@@ -165,6 +207,41 @@ curl -X POST http://localhost:8000/api/v1/chat/completions \
 ```
 
 This format is needed when using the OpenAI SDK for vision analysis.
+
+### Note on Vision Streaming
+
+While the API supports streaming for regular chat completions, it currently **does not** support streaming for vision requests. If you set `stream: true` in a vision request, the API will automatically convert it to a non-streaming request and return a complete response with the header `X-Stream-Fallback` to indicate this fallback.
+
+Example of a vision request with streaming that will automatically fall back:
+
+```bash
+curl -i -X POST http://localhost:8000/api/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{
+    "model": "grok-2-vision-latest",
+    "messages": [
+      {
+        "role": "user", 
+        "content": [
+          {
+            "type": "image_url",
+            "image_url": {
+              "url": "https://api.time.com/wp-content/uploads/2017/11/dogs-cats-brain-study.jpg"
+            }
+          },
+          {
+            "type": "text",
+            "text": "What is in this image?"
+          }
+        ]
+      }
+    ],
+    "stream": true
+  }'
+```
+
+The `-i` flag shows headers, where you can see the `X-Stream-Fallback` header in the response.
 
 ### Conversation with System Prompt
 

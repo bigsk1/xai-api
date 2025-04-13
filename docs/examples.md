@@ -205,46 +205,33 @@ curl -X POST http://localhost:8000/api/v1/chat/completions \
   -d '{
     "model": "grok-3-mini-beta",
     "messages": [
-      {
-        "role": "system",
-        "content": "You are a helpful assistant."
-      },
-      {
-        "role": "user",
-        "content": "What is machine learning?"
-      }
+      {"role": "user", "content": "What is the capital of France?"}
     ],
-    "max_tokens": 1024,
     "temperature": 0.7
   }'
 ```
 
-Expected response:
-```json
-{
-  "id": "chatcmpl-123456789",
-  "object": "chat.completion",
-  "created": 1700000000,
-  "model": "grok-3-mini-beta",
-  "choices": [
-    {
-      "index": 0,
-      "message": {
-        "role": "assistant",
-        "content": "Machine learning is a subset of artificial intelligence that focuses on developing systems that can learn from and make decisions based on data..."
-      },
-      "finish_reason": "stop"
-    }
-  ],
-  "usage": {
-    "prompt_tokens": 23,
-    "completion_tokens": 156,
-    "total_tokens": 179
-  }
-}
+### Streaming Chat Completion
+
+You can use streaming to receive responses as they're being generated:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_XAI_API_KEY" \
+  -d '{
+    "model": "grok-3-mini-beta",
+    "messages": [
+      {"role": "user", "content": "Write a short poem about the ocean"}
+    ],
+    "stream": true,
+    "temperature": 0.7
+  }'
 ```
 
-### Chat Completion with Multiple Messages
+For more detailed information about streaming, see the [Streaming API documentation](./streaming.md).
+
+### Chat Completion with System Message
 
 ```bash
 curl -X POST http://localhost:8000/api/v1/chat/completions \

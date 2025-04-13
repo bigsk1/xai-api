@@ -87,11 +87,50 @@ def test_image_generation():
         print(f"Error: {str(e)}")
         return False
 
+def test_streaming_chat():
+    print("\n=== Testing Streaming Chat with OpenAI SDK ===")
+    try:
+        print("Streaming response (first 100 characters): ", end="")
+        char_count = 0
+        full_response = ""
+        
+        stream = client.chat.completions.create(
+            model="grok-3-mini-beta",
+            messages=[
+                {"role": "user", "content": "Write a short poem about technology"}
+            ],
+            stream=True,
+            temperature=0.7
+        )
+        
+        for chunk in stream:
+            if chunk.choices[0].delta.content is not None:
+                content = chunk.choices[0].delta.content
+                full_response += content
+                
+                # Print just the first 100 characters to keep the output clean
+                if char_count < 100:
+                    remaining = 100 - char_count
+                    to_print = content[:remaining]
+                    print(to_print, end="", flush=True)
+                    char_count += len(to_print)
+        
+        print("...")
+        print(f"Total response length: {len(full_response)} characters")
+        return True
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return False
+
 def run_tests():
     results = {}
     
     # Test chat completion
     results["chat"] = test_chat_completion()
+    time.sleep(1)
+    
+    # Test streaming chat
+    results["streaming_chat"] = test_streaming_chat()
     time.sleep(1)
     
     # Test vision analysis

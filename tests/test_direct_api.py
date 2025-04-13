@@ -72,6 +72,74 @@ def test_chat_completion():
         print(f"Error: {str(e)}")
         return False
 
+def test_streaming_chat():
+    print_separator("Streaming Chat Completion (Direct API)")
+    
+    try:
+        data = {
+            "model": "grok-3-mini-beta",
+            "messages": [
+                {"role": "user", "content": "Write three facts about space exploration"}
+            ],
+            "temperature": 0.7,
+            "stream": True
+        }
+        
+        # For streaming requests, we need to use stream=True in the request
+        response = requests.post(
+            f"{API_BASE_URL}/api/v1/chat/completions",
+            headers=headers,
+            json=data,
+            stream=True
+        )
+        
+        if response.status_code == 200:
+            print("Streaming response (first few chunks):")
+            
+            chunk_count = 0
+            content_so_far = ""
+            
+            # Process the SSE stream
+            for line in response.iter_lines():
+                if line:
+                    line = line.decode('utf-8')
+                    
+                    # Skip empty lines or non-data lines
+                    if not line.startswith('data: '):
+                        continue
+                        
+                    # Handle the [DONE] message
+                    if line.strip() == 'data: [DONE]':
+                        break
+                        
+                    # Parse the JSON data
+                    import json
+                    json_str = line[6:]  # Remove 'data: ' prefix
+                    
+                    try:
+                        chunk = json.loads(json_str)
+                        delta_content = chunk['choices'][0]['delta'].get('content', '')
+                        content_so_far += delta_content
+                        
+                        # Print only the first 3 chunks to keep output clean
+                        if chunk_count < 3:
+                            print(f"Chunk {chunk_count+1}: {json_str[:50]}...")
+                            
+                        chunk_count += 1
+                    except json.JSONDecodeError:
+                        print(f"Error parsing chunk: {line}")
+            
+            print(f"Received {chunk_count} chunks total")
+            print(f"Final content length: {len(content_so_far)} characters")
+            return True
+        else:
+            print(f"Error: {response.status_code} - {response.text}")
+            return False
+            
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return False
+
 def test_vision_analysis():
     print_separator("Vision Analysis (Direct API)")
     
@@ -248,6 +316,10 @@ def run_all_tests():
     
     # Chat completion
     results["chat"] = test_chat_completion()
+    time.sleep(1)
+    
+    # Streaming chat
+    results["streaming_chat"] = test_streaming_chat()
     time.sleep(1)
     
     # Vision analysis tests
