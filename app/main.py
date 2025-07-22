@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import logging
 
-from app.routers import image_generation, image_vision, chat
+from app.routers import image_generation, image_vision, chat, stt, tts
 from app.core.config import settings
 from app.core.middleware import RequestLoggerMiddleware, RateLimitMiddleware
 
@@ -36,6 +36,8 @@ app.add_middleware(
 app.include_router(image_generation.router, prefix="/api/v1", tags=["Image Generation"])
 app.include_router(image_vision.router, prefix="/api/v1", tags=["Image Vision"])
 app.include_router(chat.router, prefix="/api/v1", tags=["Chat"])
+app.include_router(stt.router, prefix="/api/v1", tags=["STT"])
+app.include_router(tts.router, prefix="/api/v1", tags=["TTS"])
 
 @app.get("/health", tags=["Health"])
 async def health_check():
