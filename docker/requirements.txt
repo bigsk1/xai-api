@@ -1,7 +1,7 @@
 fastapi==0.115.12
 uvicorn==0.34.0
 openai==1.72.0
-requests==2.32.3
+requests==2.32.4
 pydantic==2.11.3
 pydantic-settings==2.8.1
 httpx==0.28.1
