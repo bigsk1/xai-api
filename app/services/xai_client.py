@@ -213,4 +213,30 @@ class XAIClient:
             return self._make_streaming_request("/chat/completions", request_data)
         else:
             # Use the existing non-streaming method
-            return await self._make_request("post", "/chat/completions", data=request_data) 
+            return await self._make_request("post", "/chat/completions", data=request_data)
+
+    async def transcribe_audio(self, file_path: str, model: str) -> Dict[str, Any]:
+        """Transcribe audio using the xAI audio API (Whisper)."""
+        with open(file_path, "rb") as audio_file:
+            files = {"file": (os.path.basename(file_path), audio_file, "audio/mpeg")}
+            data = {"model": model}
+            return await self._make_request("post", "/audio/transcriptions", data=data, files=files)
+
+    async def text_to_speech(self, text: str, model: str, voice: str) -> AsyncGenerator[bytes, None]:
+        """Convert text to speech using the xAI TTS API."""
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        data = {
+            "model": model,
+            "input": text,
+            "voice": voice,
+        }
+        url = f"{self.api_base}/audio/speech"
+
+        async with httpx.AsyncClient(timeout=300.0) as client:
+            async with client.stream("POST", url, headers=headers, json=data) as response:
+                response.raise_for_status()
+                async for chunk in response.aiter_bytes():
+                    yield chunk

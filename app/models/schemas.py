@@ -114,4 +114,10 @@ class ChatCompletionStreamChoice(BaseModel):
 class ErrorResponse(BaseModel):
     error: bool = True
     message: str
-    details: Optional[Dict[str, Any]] = None 
+    details: Optional[Dict[str, Any]] = None
+
+
+class TTSRequest(BaseModel):
+    text: str
+    model: str = "tts-1"
+    voice: str = "alloy"
