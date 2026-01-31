@@ -93,4 +93,7 @@ coverage.xml
 .pytest_cache/
 
 # Project specific
-local_settings.py 
+local_settings.py
+
+# Agent documentation (generated for AI coding assistants)
+AGENTS.md 
