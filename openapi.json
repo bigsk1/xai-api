@@ -262,6 +262,181 @@
         }
       }
     },
+    "/api/v1/responses": {
+      "post": {
+        "tags": [
+          "Responses API (Native Agentic Tools)"
+        ],
+        "summary": "Create response using xAI Responses API with native agentic tools",
+        "description": "Create a response using xAI's new Responses API. This endpoint supports:\n    \n    - **Native Agentic Tools**: web_search, x_search, code_execution (executed by xAI's servers)\n    - **Server-side Storage**: Conversations stored for 30 days with automatic caching\n    - **Stateful Conversations**: Use previous_response_id to continue conversations\n    - **Citations**: Automatic citations from web and X searches\n    - **Mixed Tools**: Combine server-side tools with client-side function calling\n    \n    Set stream=true to receive a streaming response. Set XAI_NATIVE_TOOLS_ENABLED=true to enable server-side tools.",
+        "operationId": "create_response_api_v1_responses_post",
+        "responses": {
+          "200": {
+            "description": "Streaming response (when stream=true)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponsesResponse"
+                }
+              },
+              "text/event-stream": {}
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/responses/{response_id}": {
+      "get": {
+        "tags": [
+          "Responses API (Native Agentic Tools)"
+        ],
+        "summary": "Retrieve a previously stored response",
+        "description": "Retrieve a response that was previously created with store=true.\n    \n    Responses are stored for 30 days on xAI's servers. Use this to:\n    - Retrieve conversation history\n    - Continue conversations without resending full history\n    - Access responses from different sessions\n    \n    The response_id is returned in the 'id' field when you create a response.",
+        "operationId": "retrieve_response_api_v1_responses__response_id__get",
+        "parameters": [
+          {
+            "name": "response_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Response Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponsesResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Responses API (Native Agentic Tools)"
+        ],
+        "summary": "Delete a previously stored response",
+        "description": "Delete a response that was previously stored on xAI's servers.\n    \n    Use this to:\n    - Clean up conversation history\n    - Remove sensitive information\n    - Manage storage usage\n    \n    Once deleted, the response cannot be retrieved or used with previous_response_id.",
+        "operationId": "delete_response_api_v1_responses__response_id__delete",
+        "parameters": [
+          {
+            "name": "response_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Response Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": [
@@ -369,6 +544,37 @@
             ],
             "title": "User",
             "description": "A unique identifier for the end-user"
+          },
+          "tools": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Tool"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tools",
+            "description": "List of tools the model can call"
+          },
+          "tool_choice": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Choice",
+            "description": "Controls which tool is called. Can be 'none', 'auto', 'required', or specify a tool"
           }
         },
         "type": "object",
@@ -457,11 +663,38 @@
           "role": {
             "type": "string",
             "title": "Role",
-            "description": "Role of the message sender (system, user, assistant)"
+            "description": "Role of the message sender (system, user, assistant, tool)"
           },
           "content": {
             "title": "Content",
             "description": "Content of the message. Can be a string or an array for vision requests."
+          },
+          "tool_calls": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ToolCall"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Calls",
+            "description": "Tool calls made by the assistant"
+          },
+          "tool_call_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Call Id",
+            "description": "Tool call ID for tool responses"
           }
         },
         "type": "object",
@@ -470,6 +703,58 @@
           "content"
         ],
         "title": "ChatMessage"
+      },
+      "Citation": {
+        "properties": {
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "snippet": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snippet"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source",
+            "description": "Source type: 'web' or 'x'"
+          }
+        },
+        "type": "object",
+        "title": "Citation",
+        "description": "Citation information from searches"
       },
       "ErrorResponse": {
         "properties": {
@@ -500,6 +785,82 @@
           "message"
         ],
         "title": "ErrorResponse"
+      },
+      "Function": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 64,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "title": "Name",
+            "description": "Function name"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 1024,
+            "title": "Description",
+            "description": "Function description"
+          },
+          "parameters": {
+            "$ref": "#/components/schemas/FunctionParameters",
+            "description": "Function parameters as JSON Schema"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description",
+          "parameters"
+        ],
+        "title": "Function"
+      },
+      "FunctionParameters": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "Parameter type, typically 'object'",
+            "default": "object"
+          },
+          "properties": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Properties",
+            "description": "Parameter properties as a JSON Schema object"
+          },
+          "required": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required",
+            "description": "List of required parameter names"
+          },
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Additionalproperties",
+            "description": "Whether additional properties are allowed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "properties"
+        ],
+        "title": "FunctionParameters"
       },
       "HTTPValidationError": {
         "properties": {
@@ -859,6 +1220,251 @@
           "content"
         ],
         "title": "ImageVisionResponse"
+      },
+      "ResponsesResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Response ID (can be used as previous_response_id)"
+          },
+          "object": {
+            "type": "string",
+            "title": "Object",
+            "description": "Object type",
+            "default": "response"
+          },
+          "created": {
+            "type": "integer",
+            "title": "Created",
+            "description": "Unix timestamp"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "description": "Model used"
+          },
+          "output": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Output",
+            "description": "Array of output messages (flexible schema)"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResponsesUsageMetrics"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "server_side_tool_usage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ServerSideToolUsage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "citations": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/Citation"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Citations",
+            "description": "Citations from web/X searches"
+          },
+          "finish_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finish Reason",
+            "description": "Reason completion stopped"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "id",
+          "created",
+          "model",
+          "output"
+        ],
+        "title": "ResponsesResponse",
+        "description": "Response model for xAI Responses API"
+      },
+      "ResponsesUsageMetrics": {
+        "properties": {
+          "input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Tokens"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Tokens"
+          },
+          "total_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Tokens"
+          },
+          "reasoning_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reasoning Tokens"
+          },
+          "cached_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cached Tokens"
+          }
+        },
+        "type": "object",
+        "title": "ResponsesUsageMetrics",
+        "description": "Usage metrics for Responses API"
+      },
+      "ServerSideToolUsage": {
+        "properties": {
+          "web_search_calls": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Web Search Calls",
+            "description": "Number of web search calls",
+            "default": 0
+          },
+          "x_search_calls": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "X Search Calls",
+            "description": "Number of X search calls",
+            "default": 0
+          },
+          "code_execution_calls": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code Execution Calls",
+            "description": "Number of code execution calls",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "title": "ServerSideToolUsage",
+        "description": "Server-side tool usage metrics"
+      },
+      "Tool": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "Tool type, currently only 'function' is supported",
+            "default": "function"
+          },
+          "function": {
+            "$ref": "#/components/schemas/Function",
+            "description": "Function definition"
+          }
+        },
+        "type": "object",
+        "required": [
+          "function"
+        ],
+        "title": "Tool"
+      },
+      "ToolCall": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Unique identifier for the tool call"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "Type of tool call",
+            "default": "function"
+          },
+          "function": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Function",
+            "description": "Function call details with 'name' and 'arguments'"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "function"
+        ],
+        "title": "ToolCall"
       },
       "UsageMetrics": {
         "properties": {

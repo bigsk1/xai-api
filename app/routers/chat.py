@@ -6,9 +6,10 @@ import json
 import uuid
 from typing import AsyncGenerator, Optional
 
-from app.models.schemas import ChatCompletionResponse, ErrorResponse, ChatCompletionRequest
+from app.models.schemas import ChatCompletionResponse, ErrorResponse, ChatCompletionRequest, Tool
 from app.services.xai_client import XAIClient
 from app.core.config import settings
+from app.utils.tool_validation import validate_tools, validate_tool_choice, ToolValidationError
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -104,6 +105,44 @@ async def chat_completion(
             request_data["model"] = settings.DEFAULT_CHAT_MODEL
             
         model_used = request_data.get("model", settings.DEFAULT_CHAT_MODEL)
+        
+        # Handle tools parameter based on XAI_TOOLS_ENABLED setting
+        if "tools" in request_data or "tool_choice" in request_data:
+            if not settings.XAI_TOOLS_ENABLED:
+                logger.warning("Tool calling requested but XAI_TOOLS_ENABLED is false - removing tools from request")
+                request_data.pop("tools", None)
+                request_data.pop("tool_choice", None)
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Tool calling is disabled on this server. Set XAI_TOOLS_ENABLED=true to enable."
+                )
+            else:
+                # Validate tools if provided
+                try:
+                    tools = None
+                    if "tools" in request_data:
+                        # Parse tools into Pydantic models for validation
+                        tools = [Tool(**tool) for tool in request_data["tools"]]
+                        validate_tools(tools)
+                        logger.info(f"Validated {len(tools)} tools for request")
+                    
+                    # Validate tool_choice if provided
+                    if "tool_choice" in request_data:
+                        validate_tool_choice(request_data["tool_choice"], tools)
+                        logger.info(f"Validated tool_choice: {request_data['tool_choice']}")
+                        
+                except ToolValidationError as e:
+                    logger.error(f"Tool validation failed: {str(e)}")
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Tool validation failed: {str(e)}"
+                    )
+                except Exception as e:
+                    logger.error(f"Error parsing tools: {str(e)}")
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=f"Invalid tool format: {str(e)}"
+                    )
         
         # Check if streaming is requested
         is_streaming = request_data.get("stream", False)

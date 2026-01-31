@@ -10,6 +10,7 @@ pillow==11.1.0
 python-multipart==0.0.22
 uuid==1.30
 colorama==0.4.6
+xai_sdk
 #python-jose==3.4.0
 #passlib==1.7.4
 #bcrypt==4.3.0

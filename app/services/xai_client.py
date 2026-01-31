@@ -28,6 +28,8 @@ class XAIClient:
             async with httpx.AsyncClient(timeout=60.0) as client:
                 if method.lower() == "get":
                     response = await client.get(url, headers=headers, params=params)
+                elif method.lower() == "delete":
+                    response = await client.delete(url, headers=headers)
                 elif method.lower() == "post":
                     if files:
                         response = await client.post(url, headers=headers, data=data, files=files)
@@ -213,4 +215,44 @@ class XAIClient:
             return self._make_streaming_request("/chat/completions", request_data)
         else:
             # Use the existing non-streaming method
-            return await self._make_request("post", "/chat/completions", data=request_data) 
+            return await self._make_request("post", "/chat/completions", data=request_data)
+    
+    async def create_response(self, request_data: Dict[str, Any]) -> Union[Dict[str, Any], AsyncGenerator[Dict[str, Any], None]]:
+        """Create a response using the xAI Responses API (new agentic tools API).
+        
+        This endpoint supports:
+        - Server-side agentic tools (web_search, x_search, code_execution)
+        - Server-side conversation storage with previous_response_id
+        - Automatic caching and optimization
+        
+        If stream=True is in the request_data, returns an async generator that yields chunks of the response.
+        Otherwise, returns the complete response as a dictionary.
+        """
+        # Check if streaming is requested
+        if request_data.get("stream", False):
+            return self._make_streaming_request("/responses", request_data)
+        else:
+            # Use the existing non-streaming method
+            return await self._make_request("post", "/responses", data=request_data)
+    
+    async def retrieve_response(self, response_id: str) -> Dict[str, Any]:
+        """Retrieve a previously stored response by ID.
+        
+        Args:
+            response_id: The ID of the response to retrieve
+            
+        Returns:
+            The response object with all its content
+        """
+        return await self._make_request("get", f"/responses/{response_id}")
+    
+    async def delete_response(self, response_id: str) -> Dict[str, Any]:
+        """Delete a previously stored response by ID.
+        
+        Args:
+            response_id: The ID of the response to delete
+            
+        Returns:
+            Confirmation of deletion
+        """
+        return await self._make_request("delete", f"/responses/{response_id}") 

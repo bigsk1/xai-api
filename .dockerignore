@@ -67,6 +67,7 @@ htmlcov/
 # Project specific
 tests/
 docs/
+dev/
 output*.jpg
 *.log
 *.md

@@ -95,5 +95,8 @@ coverage.xml
 # Project specific
 local_settings.py
 
+# Development folder (private notes, testing docs, etc.)
+dev/
+
 # Agent documentation (generated for AI coding assistants)
 AGENTS.md 

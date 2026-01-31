@@ -6,16 +6,19 @@ A modular FastAPI application to interact with xAI Grok API for image generation
 
 ## Features
 
+- **Responses API (NEW!)**: xAI's modern agentic tools API with native web search, X search, and code execution
 - **Image Generation**: Generate images using xAI Grok models based on text prompts
 - **Image Vision/Understanding**: Analyze and understand image content
-- **Chat Completions**: Generate text responses using xAI Grok chat models
-- **Streaming Support**: Stream chat responses in real-time as they are generated
+- **Chat Completions**: Generate text responses using xAI Grok chat models with optional client-side function calling
+- **Streaming Support**: Stream responses in real-time as they are generated
+- **Function Calling**: Define and execute custom functions on this server (optional)
+- **Native Agentic Tools**: Let Grok autonomously search the web, X, or execute code (optional)
+- **Optional API Authentication**: Bearer token authentication middleware for access control
 - **Docker Ready**: Production-ready Docker setup with Nginx reverse proxy
 - **Security Hardened**: SSL/TLS, security headers, and non-root user setup
 - Modular architecture for easy extension
 - Support for multiple models
 - Rate limiting and request logging
-- API key authentication
 
 ## OpenAI SDK Compatibility
 
@@ -126,10 +129,18 @@ print(f"Image URL: {image_response.data[0].url}")
    DEFAULT_CHAT_MODEL=grok-3-mini-beta
    DEFAULT_IMAGE_GEN_MODEL=grok-2-image
    DEFAULT_VISION_MODEL=grok-2-vision-latest 
-   # Optional: Rate limiting
-   API_RATE_LIMIT=100
-   API_RATE_LIMIT_PERIOD=3600
-   ```
+     # Optional: Rate limiting
+     API_RATE_LIMIT=100
+     API_RATE_LIMIT_PERIOD=3600
+     
+     # Optional: Enable tools (both disabled by default for security)
+     XAI_TOOLS_ENABLED=false              # Enable client-side function calling
+     XAI_NATIVE_TOOLS_ENABLED=false       # Enable xAI's native agentic tools
+     
+     # Optional: API Authentication (disabled by default)
+     XAI_API_AUTH=false                   # Enable bearer token authentication
+     XAI_API_AUTH_TOKEN=                  # Set a secure token when auth enabled
+     ```
 
 ### Running the API
 
@@ -178,6 +189,11 @@ Once the server is running, you can access the auto-generated API documentation:
 
 For detailed examples of how to use the API, check the documentation in the `docs` folder:
 
+- **[Responses API Guide](docs/responses_api.md)** - **NEW!** Complete guide to xAI's native agentic tools
+- **[Function Calling Guide](docs/function_calling.md)** - Guide to client-side function calling
+- **[API Authentication](docs/authentication.md)** - Optional bearer token authentication setup
+- **[Dual Authentication](docs/dual_authentication.md)** - Using Traefik BasicAuth + API token together
+- **[Documentation Security](docs/docs_security.md)** - Controlling access to /docs and API documentation
 - [API Usage Examples](docs/examples.md) - Examples of using each endpoint with curl
 - [Streaming API](docs/streaming.md) - Guide to using streaming responses for real-time output
 - [Ready-to-Use Curl Commands](docs/curl_commands.md) - Copy-pastable curl commands for testing
@@ -185,17 +201,22 @@ For detailed examples of how to use the API, check the documentation in the `doc
 
 ## Endpoints
 
+### Responses API (Recommended - NEW!)
+
+- `POST /api/v1/responses`: Create responses with xAI's native agentic tools (web search, X search, code execution)
+
+### Chat Completions
+
+- `POST /api/v1/chat/completions`: Generate chat completions with optional client-side function calling
+
 ### Image Generation
 
 - `POST /api/v1/images/generate`: Generate images based on text prompts
+- `POST /api/v1/images/generations`: OpenAI SDK compatible endpoint
 
 ### Image Vision/Understanding
 
 - `POST /api/v1/vision/analyze`: Analyze image content using vision models
-
-### Chat
-
-- `POST /api/v1/chat/completions`: Generate chat completions
 
 ### Health Check
 
@@ -212,6 +233,8 @@ The application is configurable through environment variables or a `.env` file:
 - `DEFAULT_VISION_MODEL`: Default model for image vision (default: "grok-2-vision-latest")
 - `API_RATE_LIMIT`: Maximum number of requests per time window (default: 100)
 - `API_RATE_LIMIT_PERIOD`: Time window in seconds for rate limiting (default: 3600)
+- `XAI_TOOLS_ENABLED`: Enable client-side function calling (default: false, for security)
+- `XAI_NATIVE_TOOLS_ENABLED`: Enable xAI's native agentic tools (default: false, for security)
 
 ## Security
 

@@ -49,10 +49,37 @@ class ImageVisionResponse(BaseModel):
     content: str
     usage: Optional[Dict[str, Any]] = None
 
+# Tool/Function Calling Models
+class FunctionParameters(BaseModel):
+    type: str = Field("object", description="Parameter type, typically 'object'")
+    properties: Dict[str, Any] = Field(..., description="Parameter properties as a JSON Schema object")
+    required: Optional[List[str]] = Field(None, description="List of required parameter names")
+    additionalProperties: Optional[bool] = Field(None, description="Whether additional properties are allowed")
+
+class Function(BaseModel):
+    name: str = Field(..., description="Function name", max_length=64, pattern="^[a-zA-Z0-9_-]+$")
+    description: str = Field(..., description="Function description", max_length=1024)
+    parameters: FunctionParameters = Field(..., description="Function parameters as JSON Schema")
+
+class Tool(BaseModel):
+    type: str = Field("function", description="Tool type, currently only 'function' is supported")
+    function: Function = Field(..., description="Function definition")
+
+class ToolCall(BaseModel):
+    id: str = Field(..., description="Unique identifier for the tool call")
+    type: str = Field("function", description="Type of tool call")
+    function: Dict[str, Any] = Field(..., description="Function call details with 'name' and 'arguments'")
+
+class ToolChoice(BaseModel):
+    """Tool choice parameter - can be 'none', 'auto', 'required', or a specific tool"""
+    pass  # Union type will be handled in ChatCompletionRequest
+
 # Chat Models
 class ChatMessage(BaseModel):
-    role: str = Field(..., description="Role of the message sender (system, user, assistant)")
+    role: str = Field(..., description="Role of the message sender (system, user, assistant, tool)")
     content: Any = Field(..., description="Content of the message. Can be a string or an array for vision requests.")
+    tool_calls: Optional[List[ToolCall]] = Field(None, description="Tool calls made by the assistant")
+    tool_call_id: Optional[str] = Field(None, description="Tool call ID for tool responses")
 
 class TokenDetails(BaseModel):
     text_tokens: Optional[int] = None
@@ -78,6 +105,8 @@ class ChatCompletionRequest(BaseModel):
     top_p: Optional[float] = Field(1.0, description="Nucleus sampling parameter")
     stream: Optional[bool] = Field(False, description="Whether to stream the response")
     user: Optional[str] = Field(None, description="A unique identifier for the end-user")
+    tools: Optional[List[Tool]] = Field(None, description="List of tools the model can call")
+    tool_choice: Optional[Union[str, Dict[str, Any]]] = Field(None, description="Controls which tool is called. Can be 'none', 'auto', 'required', or specify a tool")
 
 class ChatCompletionResponse(BaseModel):
     id: Optional[str] = None
@@ -90,7 +119,8 @@ class ChatCompletionResponse(BaseModel):
 # Adding detailed models for chat completion response
 class ChatCompletionResponseMessage(BaseModel):
     role: str = Field(..., description="The role of the message author (e.g., 'assistant')")
-    content: str = Field(..., description="The content of the message")
+    content: Optional[str] = Field(None, description="The content of the message")
+    tool_calls: Optional[List[ToolCall]] = Field(None, description="Tool calls made by the assistant")
 
 class ChatCompletionResponseChoice(BaseModel):
     index: int = Field(..., description="The index of the choice")
@@ -109,6 +139,96 @@ class ChatCompletionStreamChoice(BaseModel):
     index: int = Field(..., description="The index of the choice")
     delta: Dict[str, Any] = Field(..., description="The content delta for this chunk")
     finish_reason: Optional[str] = Field(None, description="The reason the model stopped generating, if applicable")
+
+# Responses API Models (xAI Native Agentic Tools API)
+class ServerSideTool(BaseModel):
+    """Server-side tool definition (web_search, x_search, code_execution)"""
+    type: str = Field(..., description="Tool type: 'web_search', 'x_search', or 'code_execution'")
+    
+class ResponsesInputMessage(BaseModel):
+    """Message format for Responses API input"""
+    role: str = Field(..., description="Message role: 'user', 'assistant', or 'tool'")
+    content: Optional[Any] = Field(None, description="Message content")
+    tool_calls: Optional[List[ToolCall]] = Field(None, description="Tool calls made by assistant")
+    tool_call_id: Optional[str] = Field(None, description="ID of tool call being responded to")
+
+class ResponsesRequest(BaseModel):
+    """Request model for xAI Responses API"""
+    model: str = Field(..., description="Model to use (e.g., 'grok-4', 'grok-4-fast')")
+    input: List[ResponsesInputMessage] = Field(..., description="Input messages (replaces 'messages')")
+    max_output_tokens: Optional[int] = Field(None, description="Maximum tokens to generate (replaces 'max_tokens')")
+    temperature: Optional[float] = Field(0.7, description="Sampling temperature")
+    top_p: Optional[float] = Field(1.0, description="Nucleus sampling parameter")
+    stream: Optional[bool] = Field(False, description="Whether to stream the response")
+    previous_response_id: Optional[str] = Field(None, description="ID of previous response to continue conversation")
+    store: Optional[bool] = Field(True, description="Store conversation server-side for 30 days")
+    tools: Optional[List[Union[Tool, ServerSideTool]]] = Field(None, description="Mix of client-side and server-side tools")
+    tool_choice: Optional[Union[str, Dict[str, Any]]] = Field(None, description="Tool choice control")
+    include: Optional[List[str]] = Field(None, description="Additional data to include (e.g., 'reasoning.encrypted_content', 'code_execution_call_output')")
+    user: Optional[str] = Field(None, description="Unique identifier for end-user")
+
+class ServerSideToolUsage(BaseModel):
+    """Server-side tool usage metrics"""
+    web_search_calls: Optional[int] = Field(0, description="Number of web search calls")
+    x_search_calls: Optional[int] = Field(0, description="Number of X search calls")
+    code_execution_calls: Optional[int] = Field(0, description="Number of code execution calls")
+
+class ResponsesUsageMetrics(BaseModel):
+    """Usage metrics for Responses API"""
+    input_tokens: Optional[int] = None
+    output_tokens: Optional[int] = None
+    total_tokens: Optional[int] = None
+    reasoning_tokens: Optional[int] = None
+    cached_tokens: Optional[int] = None
+
+class Citation(BaseModel):
+    """Citation information from searches"""
+    url: Optional[str] = None
+    title: Optional[str] = None
+    snippet: Optional[str] = None
+    source: Optional[str] = Field(None, description="Source type: 'web' or 'x'")
+
+class OutputContent(BaseModel):
+    """Content item in response output"""
+    type: str = Field(..., description="Content type: 'output_text', 'tool_call', etc.")
+    text: Optional[str] = Field(None, description="Text content")
+    tool_calls: Optional[List[ToolCall]] = Field(None, description="Tool calls")
+
+class ResponsesOutputMessage(BaseModel):
+    """Output message from Responses API"""
+    type: str = Field(..., description="Output type: 'message', 'web_search_call', etc.")
+    role: Optional[str] = Field(None, description="Message role")
+    content: Optional[List[OutputContent]] = Field(None, description="Array of content items")
+    tool_calls: Optional[List[ToolCall]] = Field(None, description="Tool calls made")
+    # Allow additional fields for tool-specific responses
+    class Config:
+        extra = "allow"
+
+class ResponsesResponse(BaseModel):
+    """Response model for xAI Responses API"""
+    id: str = Field(..., description="Response ID (can be used as previous_response_id)")
+    object: str = Field("response", description="Object type")
+    created: int = Field(..., description="Unix timestamp")
+    model: str = Field(..., description="Model used")
+    output: List[Dict[str, Any]] = Field(..., description="Array of output messages (flexible schema)")
+    usage: Optional[ResponsesUsageMetrics] = None
+    server_side_tool_usage: Optional[ServerSideToolUsage] = None
+    citations: Optional[List[Citation]] = Field(None, description="Citations from web/X searches")
+    finish_reason: Optional[str] = Field(None, description="Reason completion stopped")
+    
+    class Config:
+        extra = "allow"
+
+class ResponsesStreamChunk(BaseModel):
+    """Streaming chunk for Responses API"""
+    id: str
+    object: str = Field("response.chunk", description="Object type for streaming")
+    created: int
+    model: str
+    output: List[Dict[str, Any]] = Field(..., description="Partial output data")
+    usage: Optional[ResponsesUsageMetrics] = None
+    tool_calls: Optional[List[ToolCall]] = None
+    tool_outputs: Optional[List[Dict[str, Any]]] = None
 
 # Error Response
 class ErrorResponse(BaseModel):

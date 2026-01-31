@@ -3,9 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import logging
 
-from app.routers import image_generation, image_vision, chat
+from app.routers import image_generation, image_vision, chat, responses
 from app.core.config import settings
-from app.core.middleware import RequestLoggerMiddleware, RateLimitMiddleware
+from app.core.middleware import RequestLoggerMiddleware, RateLimitMiddleware, APIAuthMiddleware
 
 # Configure logging
 logging.basicConfig(
@@ -19,9 +19,10 @@ app = FastAPI(
     version="0.1.0",
 )
 
-# Add middlewares
-app.add_middleware(RequestLoggerMiddleware)
-app.add_middleware(RateLimitMiddleware)
+# Add middlewares (order matters: last added runs first)
+app.add_middleware(RequestLoggerMiddleware)  # Logs all requests
+app.add_middleware(RateLimitMiddleware)      # Rate limits after logging
+app.add_middleware(APIAuthMiddleware)        # Auth check runs first (if enabled)
 
 # Configure CORS
 app.add_middleware(
@@ -36,6 +37,7 @@ app.add_middleware(
 app.include_router(image_generation.router, prefix="/api/v1", tags=["Image Generation"])
 app.include_router(image_vision.router, prefix="/api/v1", tags=["Image Vision"])
 app.include_router(chat.router, prefix="/api/v1", tags=["Chat"])
+app.include_router(responses.router, prefix="/api/v1/responses", tags=["Responses API (Native Agentic Tools)"])
 
 @app.get("/health", tags=["Health"])
 async def health_check():

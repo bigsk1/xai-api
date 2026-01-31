@@ -1,6 +1,7 @@
 import time
 import logging
 from fastapi import Request, Response
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 import uuid
@@ -118,4 +119,103 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         response.headers["X-RateLimit-Remaining"] = str(self.rate_limit - len(self.requests[rate_limit_key]))
         response.headers["X-RateLimit-Reset"] = str(int(current_time + self.window))
         
-        return response 
+        return response
+
+class APIAuthMiddleware(BaseHTTPMiddleware):
+    """
+    Middleware for optional token authentication.
+    
+    Supports two modes:
+    1. Authorization: Bearer <token> (default, standard OAuth2)
+    2. X-API-Token: <token> (custom header, for use with Traefik BasicAuth)
+    
+    Configure via XAI_API_AUTH_HEADER environment variable.
+    """
+    
+    async def dispatch(self, request: Request, call_next):
+        # Skip authentication if disabled
+        if not settings.XAI_API_AUTH:
+            return await call_next(request)
+        
+        # Build exempt paths list based on configuration
+        exempt_paths = ["/health"]  # Health is always exempt
+        
+        # Add docs paths if XAI_API_AUTH_EXCLUDE_DOCS is true
+        if settings.XAI_API_AUTH_EXCLUDE_DOCS:
+            exempt_paths.extend(["/docs", "/redoc", "/openapi.json"])
+        
+        # Check if path is exempt from authentication
+        if request.url.path in exempt_paths:
+            return await call_next(request)
+        
+        # Check server configuration
+        if not settings.XAI_API_AUTH_TOKEN:
+            logger.error("XAI_API_AUTH is enabled but XAI_API_AUTH_TOKEN is not set!")
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "error": {
+                        "message": "Server authentication configuration error",
+                        "type": "server_error",
+                        "code": "auth_misconfigured"
+                    }
+                }
+            )
+        
+        # Determine which header to check
+        auth_header_name = settings.XAI_API_AUTH_HEADER
+        token = None
+        
+        if auth_header_name == "Authorization":
+            # Standard Bearer token authentication
+            auth_header = request.headers.get("Authorization", "")
+            
+            if not auth_header.startswith("Bearer "):
+                logger.warning(f"Missing or invalid Authorization header from {request.client.host if request.client else 'unknown'}")
+                return JSONResponse(
+                    status_code=401,
+                    content={
+                        "error": {
+                            "message": "Missing or invalid Authorization header. Expected format: 'Bearer <token>'",
+                            "type": "authentication_error",
+                            "code": "missing_authorization"
+                        }
+                    },
+                    headers={"WWW-Authenticate": "Bearer"}
+                )
+            
+            token = auth_header.replace("Bearer ", "")
+        else:
+            # Custom header authentication (e.g., X-API-Token)
+            token = request.headers.get(auth_header_name, "")
+            
+            if not token:
+                logger.warning(f"Missing {auth_header_name} header from {request.client.host if request.client else 'unknown'}")
+                return JSONResponse(
+                    status_code=401,
+                    content={
+                        "error": {
+                            "message": f"Missing {auth_header_name} header. Please provide your API token.",
+                            "type": "authentication_error",
+                            "code": "missing_token_header"
+                        }
+                    }
+                )
+        
+        # Validate token
+        if token != settings.XAI_API_AUTH_TOKEN:
+            logger.warning(f"Invalid API token from {request.client.host if request.client else 'unknown'}")
+            return JSONResponse(
+                status_code=401,
+                content={
+                    "error": {
+                        "message": "Invalid API token",
+                        "type": "authentication_error",
+                        "code": "invalid_token"
+                    }
+                }
+            )
+        
+        # Token is valid, proceed with request
+        logger.debug(f"Valid API token from {request.client.host if request.client else 'unknown'}")
+        return await call_next(request) 
