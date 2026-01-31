@@ -71,7 +71,7 @@ def test_chat_completion_direct():
     print_subsection("Basic Chat")
     try:
         data = {
-            "model": "grok-3-mini-beta",
+            "model": "grok-4-1-fast-non-reasoning",
             "messages": [
                 {"role": "user", "content": "What is the capital of France?"}
             ],
@@ -99,7 +99,7 @@ def test_chat_completion_direct():
     print_subsection("Chat with System Message")
     try:
         data = {
-            "model": "grok-3-mini-beta",
+            "model": "grok-4-1-fast-non-reasoning",
             "messages": [
                 {"role": "system", "content": "You are a helpful assistant that speaks like a pirate."},
                 {"role": "user", "content": "Tell me about the weather today."}
@@ -126,7 +126,7 @@ def test_chat_completion_direct():
     print_subsection("Chat with Different Temperature")
     try:
         data = {
-            "model": "grok-3-mini-beta",
+            "model": "grok-4-1-fast-non-reasoning",
             "messages": [
                 {"role": "user", "content": "Write a short poem about coding."}
             ],
@@ -153,7 +153,7 @@ def test_chat_completion_direct():
     print_subsection("Chat Streaming")
     try:
         data = {
-            "model": "grok-3-mini-beta",
+            "model": "grok-4-1-fast-non-reasoning",
             "messages": [
                 {"role": "user", "content": "Count from 1 to 5."}
             ],
@@ -218,7 +218,7 @@ def test_chat_completion_sdk():
     print_subsection("Basic Chat")
     try:
         response = openai_client.chat.completions.create(
-            model="grok-3-mini-beta",
+            model="grok-4-1-fast-non-reasoning",
             messages=[
                 {"role": "user", "content": "What is the capital of Japan?"}
             ],
@@ -236,7 +236,7 @@ def test_chat_completion_sdk():
     print_subsection("Chat with Conversation History")
     try:
         response = openai_client.chat.completions.create(
-            model="grok-3-mini-beta",
+            model="grok-4-1-fast-non-reasoning",
             messages=[
                 {"role": "user", "content": "My name is Alice."},
                 {"role": "assistant", "content": "Hello Alice, how can I help you today?"},
@@ -259,7 +259,7 @@ def test_chat_completion_sdk():
         max_chunks_to_display = 5  # Only show first few chunks
         
         stream = openai_client.chat.completions.create(
-            model="grok-3-mini-beta",
+            model="grok-4-1-fast-non-reasoning",
             messages=[
                 {"role": "user", "content": "List the days of the week."}
             ],

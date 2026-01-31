@@ -23,9 +23,15 @@ class RequestLoggerMiddleware(BaseHTTPMiddleware):
         forwarded_for = request.headers.get("X-Forwarded-For")
         client_ip = forwarded_for.split(",")[0] if forwarded_for else request.client.host if request.client else None
         
-        # Log request
+        # Get headers for debugging
+        auth_header = request.headers.get("Authorization", "N/A")[:50]  # Truncate for security
+        x_api_token = request.headers.get("X-API-Token", "N/A")[:20]  # Truncate for security
+        user_agent = request.headers.get("User-Agent", "N/A")
+        
+        # Log request with auth info
         logger.info(
-            f"Request started [ID: {request_id}]: {request.method} {request.url.path} from {client_ip}"
+            f"Request started [ID: {request_id}]: {request.method} {request.url.path} from {client_ip} | "
+            f"Auth: {auth_header}... | X-API-Token: {x_api_token}... | User-Agent: {user_agent}"
         )
         
         # Process request

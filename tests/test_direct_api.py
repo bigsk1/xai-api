@@ -45,7 +45,7 @@ def test_chat_completion():
     
     try:
         data = {
-            "model": "grok-3-mini-beta",
+            "model": "grok-4-1-fast-non-reasoning",
             "messages": [
                 {"role": "user", "content": "What is the capital of Germany?"}
             ],
@@ -77,7 +77,7 @@ def test_streaming_chat():
     
     try:
         data = {
-            "model": "grok-3-mini-beta",
+            "model": "grok-4-1-fast-non-reasoning",
             "messages": [
                 {"role": "user", "content": "Write three facts about space exploration"}
             ],

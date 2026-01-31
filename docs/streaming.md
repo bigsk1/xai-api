@@ -47,7 +47,7 @@ client = OpenAI(
 
 # Create a streaming completion
 stream = client.chat.completions.create(
-    model="grok-3-mini-beta",
+    model="grok-4-1-fast-non-reasoning",
     messages=[
         {"role": "user", "content": "Write a short story about a space adventure"}
     ],
@@ -78,7 +78,7 @@ headers = {
 }
 
 data = {
-    "model": "grok-3-mini-beta",
+    "model": "grok-4-1-fast-non-reasoning",
     "messages": [
         {"role": "user", "content": "Write a short story about a space adventure"}
     ],
@@ -115,7 +115,7 @@ curl -X POST https://your-api-domain.com/api/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer your_api_key" \
   -d '{
-    "model": "grok-3-mini-beta",
+    "model": "grok-4-1-fast-non-reasoning",
     "messages": [
       {"role": "user", "content": "Write a short story about a space adventure"}
     ],
@@ -128,9 +128,9 @@ curl -X POST https://your-api-domain.com/api/v1/chat/completions \
 The streaming response follows the SSE format:
 
 ```
-data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1692469985,"model":"grok-3-mini-beta","choices":[{"delta":{"role":"assistant","content":"Once"},"index":0,"finish_reason":null}]}
+data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1692469985,"model":"grok-4-1-fast-non-reasoning","choices":[{"delta":{"role":"assistant","content":"Once"},"index":0,"finish_reason":null}]}
 
-data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1692469985,"model":"grok-3-mini-beta","choices":[{"delta":{"content":" upon"},"index":0,"finish_reason":null}]}
+data: {"id":"chatcmpl-123","object":"chat.completion.chunk","created":1692469985,"model":"grok-4-1-fast-non-reasoning","choices":[{"delta":{"content":" upon"},"index":0,"finish_reason":null}]}
 
 data: [DONE]
 ```

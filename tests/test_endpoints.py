@@ -12,7 +12,7 @@ def test_chat_completion():
     print("\n=== Testing Chat Completion ===")
     try:
         chat_response = client.chat.completions.create(
-            model="grok-3-mini-beta",
+            model="grok-4-1-fast-non-reasoning",
             messages=[
                 {"role": "user", "content": "What is the capital of France?"}
             ],

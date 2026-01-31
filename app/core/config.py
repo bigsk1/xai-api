@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     ]
     
     # Default models
-    DEFAULT_CHAT_MODEL: str = os.getenv("DEFAULT_CHAT_MODEL", "grok-3-mini-beta")
+    DEFAULT_CHAT_MODEL: str = os.getenv("DEFAULT_CHAT_MODEL", "grok-4-1-fast-non-reasoning")
     DEFAULT_IMAGE_GEN_MODEL: str = os.getenv("DEFAULT_IMAGE_GEN_MODEL", "grok-2-image")
     DEFAULT_VISION_MODEL: str = os.getenv("DEFAULT_VISION_MODEL", "grok-2-vision-latest")
     

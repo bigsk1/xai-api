@@ -66,7 +66,7 @@ CHAT_RESPONSE=$(curl -s -k -X POST \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $XAI_API_KEY" \
   -d '{
-    "model": "grok-3-mini-beta",
+    "model": "grok-4-1-fast-non-reasoning",
     "messages": [
       {"role": "user", "content": "What is the capital of France?"}
     ]

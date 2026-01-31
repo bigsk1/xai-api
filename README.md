@@ -38,7 +38,7 @@ client = OpenAI(
 
 # Chat completion
 chat_response = client.chat.completions.create(
-    model="grok-3-mini-beta",
+    model="grok-4-1-fast-non-reasoning",
     messages=[
         {"role": "user", "content": "What is the capital of France?"}
     ],
@@ -48,7 +48,7 @@ print(chat_response.choices[0].message.content)
 
 # Streaming chat completion
 stream = client.chat.completions.create(
-    model="grok-3-mini-beta",
+    model="grok-4-1-fast-non-reasoning",
     messages=[
         {"role": "user", "content": "Write a short story about space travel"}
     ],
@@ -126,7 +126,7 @@ print(f"Image URL: {image_response.data[0].url}")
    XAI_API_BASE=https://api.x.ai/v1
    
    # Optional configuration
-   DEFAULT_CHAT_MODEL=grok-3-mini-beta
+   DEFAULT_CHAT_MODEL=grok-4-1-fast-non-reasoning
    DEFAULT_IMAGE_GEN_MODEL=grok-2-image
    DEFAULT_VISION_MODEL=grok-2-vision-latest 
      # Optional: Rate limiting
@@ -228,7 +228,7 @@ The application is configurable through environment variables or a `.env` file:
 
 - `XAI_API_KEY`: Your xAI API key (required)
 - `XAI_API_BASE`: Base URL for xAI API (default: "https://api.x.ai/v1")
-- `DEFAULT_CHAT_MODEL`: Default model for chat completions (default: "grok-3-mini-beta")
+- `DEFAULT_CHAT_MODEL`: Default model for chat completions (default: "grok-4-1-fast-non-reasoning")
 - `DEFAULT_IMAGE_GEN_MODEL`: Default model for image generation (default: "grok-2-image")
 - `DEFAULT_VISION_MODEL`: Default model for image vision (default: "grok-2-vision-latest")
 - `API_RATE_LIMIT`: Maximum number of requests per time window (default: 100)

@@ -122,7 +122,7 @@ curl -X POST http://localhost:8000/api/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -d '{
-    "model": "grok-3-mini-beta",
+    "model": "grok-4-1-fast-non-reasoning",
     "messages": [
       {
         "role": "user",
@@ -139,7 +139,7 @@ curl -X POST http://localhost:8000/api/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -d '{
-    "model": "grok-3-mini-beta",
+    "model": "grok-4-1-fast-non-reasoning",
     "messages": [
       {
         "role": "user",
@@ -161,7 +161,7 @@ curl -X POST http://localhost:8000/api/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -d '{
-    "model": "grok-3-mini-beta",
+    "model": "grok-4-1-fast-non-reasoning",
     "messages": [
       {
         "role": "user",
@@ -250,7 +250,7 @@ curl -X POST http://localhost:8000/api/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -d '{
-    "model": "grok-3-mini-beta",
+    "model": "grok-4-1-fast-non-reasoning",
     "messages": [
       {
         "role": "system",
@@ -272,7 +272,7 @@ curl -X POST http://localhost:8000/api/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -d '{
-    "model": "grok-3-mini-beta",
+    "model": "grok-4-1-fast-non-reasoning",
     "messages": [
       {
         "role": "user",

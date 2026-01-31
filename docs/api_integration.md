@@ -273,7 +273,7 @@ try:
     
     result = chat_completion(
         messages=messages,
-        model="grok-3-mini-beta",
+        model="grok-4-1-fast-non-reasoning",
         temperature=0.7
     )
     
@@ -518,7 +518,7 @@ async function main() {
     
     const result = await chatCompletion(
       messages,
-      { model: 'grok-3-mini-beta', temperature: 0.7 }
+      { model: 'grok-4-1-fast-non-reasoning', temperature: 0.7 }
     );
     
     // Extract the assistant's response
@@ -613,7 +613,7 @@ client = OpenAI(
 
 # CHAT: Basic chat completion
 chat_response = client.chat.completions.create(
-    model="grok-3-mini-beta",
+    model="grok-4-1-fast-non-reasoning",
     messages=[
         {"role": "user", "content": "What is the capital of France?"}
     ],

@@ -24,7 +24,7 @@ def test_chat_completion():
     print("\n=== Testing Chat Completion with OpenAI SDK ===")
     try:
         response = client.chat.completions.create(
-            model="grok-3-mini-beta",
+            model="grok-4-1-fast-non-reasoning",
             messages=[
                 {"role": "user", "content": "What is the capital of France?"}
             ],
@@ -95,7 +95,7 @@ def test_streaming_chat():
         full_response = ""
         
         stream = client.chat.completions.create(
-            model="grok-3-mini-beta",
+            model="grok-4-1-fast-non-reasoning",
             messages=[
                 {"role": "user", "content": "Write a short poem about technology"}
             ],

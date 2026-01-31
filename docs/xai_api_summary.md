@@ -41,7 +41,7 @@ response = requests.post(
     f"{API_BASE_URL}/api/v1/chat/completions",
     headers=headers,
     json={
-        "model": "grok-3-mini-beta",
+        "model": "grok-4-1-fast-non-reasoning",
         "messages": [
             {"role": "user", "content": "What is the capital of France?"}
         ]
@@ -90,7 +90,7 @@ client = OpenAI(
 
 # Chat Completion
 response = client.chat.completions.create(
-    model="grok-3-mini-beta",
+    model="grok-4-1-fast-non-reasoning",
     messages=[
         {"role": "user", "content": "What is the capital of France?"}
     ]

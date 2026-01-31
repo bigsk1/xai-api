@@ -13,7 +13,7 @@ Complete list of all environment variables for the xAI API proxy.
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `XAI_API_BASE` | `https://api.x.ai/v1` | xAI API base URL |
-| `DEFAULT_CHAT_MODEL` | `grok-3-mini-beta` | Default chat model |
+| `DEFAULT_CHAT_MODEL` | `grok-4-1-fast-non-reasoning` | Default chat model |
 | `DEFAULT_IMAGE_GEN_MODEL` | `grok-2-image` | Default image generation model |
 | `DEFAULT_VISION_MODEL` | `grok-2-vision-latest` | Default vision/image analysis model |
 
