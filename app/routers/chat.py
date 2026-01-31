@@ -106,6 +106,17 @@ async def chat_completion(
             
         model_used = request_data.get("model", settings.DEFAULT_CHAT_MODEL)
         
+        # Sanitize empty tools array - treat as None
+        if "tools" in request_data and request_data["tools"] is not None:
+            if len(request_data["tools"]) == 0:
+                logger.debug("Empty tools array received, converting to None")
+                request_data["tools"] = None
+        
+        # If tools is None/empty but tool_choice is set, remove tool_choice
+        if request_data.get("tools") is None and "tool_choice" in request_data:
+            logger.debug("No tools provided but tool_choice set, removing tool_choice")
+            request_data.pop("tool_choice", None)
+        
         # Handle tools parameter based on XAI_TOOLS_ENABLED setting
         if "tools" in request_data or "tool_choice" in request_data:
             if not settings.XAI_TOOLS_ENABLED:
